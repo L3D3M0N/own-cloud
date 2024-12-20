@@ -1,38 +1,75 @@
-# TP-OwnCloud
+**Synthèse du TP Stockage Cloud avec OwnCloud :**
 
-Importer l'image : `docker pull owncloud`
-
-Lancer la VM : `docker run -d -p 80:80 owncloud`
-
-Une fois réalisé, allez sur votre client Windows et installez : [OwnCloudClient](https://owncloud.com/desktop-app/)
-
-Ensuite, connectez-vous avec un utilisateur et le client va automatiquement synchroniser vos fichiers !
-
-Vous pouvez ajouter des utilisateurs, ou aller dans les paramétres sur l'interface web de votre site : `IP de votre serveur`. dans l'onglet utilisateur, cependant, ils doivent avoir une adresse email et un groupe.
-
-Il existe également un "market" pour installer des extensions, ce qui étend les possibilités grandement, avec du LDAP par exemple, du SSL, ou encore un FTP, voire du MFA.
+Ce TP présente **OwnCloud**, une solution de stockage et partage de fichiers en ligne offrant un contrôle total sur vos données, contrairement à des solutions commerciales comme Dropbox ou Google Drive. L'objectif est de configurer et d'exploiter OwnCloud côté serveur et client, tout en automatisant les sauvegardes.
 
 ---
 
-Documentation : [https://doc.owncloud.com/desktop/next/advanced_usage/command_line_client.html](https://doc.owncloud.com/desktop/next/advanced_usage/command_line_client.html)
+### **1. Installation de OwnCloud**
+- **Via Docker** : 
+  - Téléchargement du conteneur avec la commande :  
+    `docker pull owncloud`
+  - Lancement du conteneur :  
+    `docker run -p 8082:80 -d owncloud`
+  - Vérification des conteneurs actifs :  
+    `docker ps`
 
-Réaliser un script de sauvegarde locale et compression.
+---
 
-D'abord, nous allons installer le client sur notre Linux en ligne de commande : [Télécharger OwnCloud pour Linux](https://download.owncloud.com/desktop/ownCloud/stable/latest/linux/download/)
+### **2. Installation du Client OwnCloud**
+- Sur **Windows 10/11** : Téléchargement du client via [owncloud.com](https://owncloud.com/download/).
+- Configuration d’un utilisateur nommé **"utilisateur"** avec le mot de passe **"Sio2021***`.
 
-Avoir l'extension PGP installée !
+---
 
-Puis vous pouvez suivre les commandes et voilà ! Votre client va être installé. Maintenant, pour "importer" des fichiers de votre serveur, utilisez la commande suivante :  
-`owncloudcmd -u USER -p PASSWORD FICHIER_LOCAL SERVEUR FICHIER` (utilisez `/` pour tout synchroniser)
+### **3. Fonctionnalités offertes par OwnCloud**
 
-Dans notre exemple, je rentre la commande :
+#### **Côté serveur** :
+- **Sécurité** : Plugins pour bloquer les IP suspectes et protéger contre les attaques brute-force.
+- **Supervision** : Surveillance des quotas de stockage et des performances grâce à des outils intégrés.
+- **Personnalisation** : Ajout de plugins selon les besoins spécifiques (gestion des données, collaboration, etc.).
 
-`owncloudcmd -u admin -p admin -s --sync-hidden-files /home/Owncloud-syn/ http://192.168.20.76:80 toip`
+#### **Côté client** :
+- **Exploration locale** : Accès simplifié aux fichiers via l’explorateur.
+- **Synchronisation hors ligne** : Travail local avec mise à jour automatique des modifications au retour en ligne.
 
-Pour le rendre automatique, je vais utiliser `crontab`.  
-La première ligne permet de rendre la sauvegarde automatique :  
-`45 23 * * * bash /home/script.sh`
+---
 
-Le script est dispo sur GitHub :)
+### **4. Automatisation des sauvegardes**
+- Un script Bash est utilisé pour :
+  - Sauvegarder un fichier **CSV** localement avec un nom basé sur la date/heure.
+  - Compresser le fichier en **tar.gz** pour économiser l’espace.
+  - Transférer la sauvegarde compressée vers un serveur FTP.
 
-Le script est également commenté pour sa compréhension.
+#### **Exemple de script :**
+```bash
+#!/bin/bash
+ftp_server="192.168.20.126"
+ftp_user="tech"
+ftp_password="mdp001"
+ftp_remote_dir="/home/user/archive"
+log_path="/home/sisr-6/tp/toip/fichier.csv"
+local_backup_dir="/home/sisr-6/archive"
+log_filename="owncloud-$(date +%d-%m-%Y_%H:%M:%S)"
+
+mkdir -p "$local_backup_dir"
+cp "$log_path" "$local_backup_dir/$log_filename.log"
+tar -czf "$local_backup_dir/$log_filename.tar.gz" -C "$local_backup_dir" "$log_filename.log"
+ftp -n $ftp_server <<EOF
+user $ftp_user $ftp_password
+cd "$ftp_remote_dir"
+put "$local_backup_dir/$log_filename.tar.gz"
+bye
+EOF
+```
+
+- **Planification des sauvegardes** avec **Cron** :
+  - Installation de Cron :  
+    `apt install cron`
+  - Configuration via `crontab -e` pour exécuter le script quotidiennement :  
+    `45 23 * * * /home/sisr-6/script.sh`  
+    (Pour des tests : `* * * * * /home/sisr-6/script.sh`).
+
+---
+
+### **Conclusion**
+Ce TP a permis de configurer OwnCloud côté serveur et client tout en automatisant les sauvegardes. OwnCloud se distingue par ses fonctionnalités personnalisables, sa sécurité avancée, et son contrôle total sur les données, en offrant une alternative solide aux solutions commerciales comme Dropbox.
