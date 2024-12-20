@@ -40,27 +40,7 @@ Ce TP présente **OwnCloud**, une solution de stockage et partage de fichiers en
   - Compresser le fichier en **tar.gz** pour économiser l’espace.
   - Transférer la sauvegarde compressée vers un serveur FTP.
 
-#### **Exemple de script :**
-```bash
-#!/bin/bash
-ftp_server="192.168.20.126"
-ftp_user="tech"
-ftp_password="mdp001"
-ftp_remote_dir="/home/user/archive"
-log_path="/home/sisr-6/tp/toip/fichier.csv"
-local_backup_dir="/home/sisr-6/archive"
-log_filename="owncloud-$(date +%d-%m-%Y_%H:%M:%S)"
 
-mkdir -p "$local_backup_dir"
-cp "$log_path" "$local_backup_dir/$log_filename.log"
-tar -czf "$local_backup_dir/$log_filename.tar.gz" -C "$local_backup_dir" "$log_filename.log"
-ftp -n $ftp_server <<EOF
-user $ftp_user $ftp_password
-cd "$ftp_remote_dir"
-put "$local_backup_dir/$log_filename.tar.gz"
-bye
-EOF
-```
 
 - **Planification des sauvegardes** avec **Cron** :
   - Installation de Cron :  
